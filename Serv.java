@@ -1,6 +1,7 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.*;
 import java.util.concurrent.locks.AbstractQueuedLongSynchronizer.ConditionObject;
@@ -15,6 +16,34 @@ class Heros
     this.escolhas = new HashMap<>();
     this.disp.add("ash");
     this.disp.add("scout");
+    this.disp.add("doomfist");
+    this.disp.add("genji");
+    this.disp.add("mcree");
+    this.disp.add("parah");
+    this.disp.add("reaper");
+    this.disp.add("soldier");
+    this.disp.add("sombra");
+    this.disp.add("tracer");
+    this.disp.add("bastion");
+    this.disp.add("hanzo");
+    this.disp.add("junkrat");
+    this.disp.add("mei");
+    this.disp.add("torbjorn");
+    this.disp.add("widowmaker");
+    this.disp.add("d.va");
+    this.disp.add("orisa");
+    this.disp.add("reinhardt");
+    this.disp.add("roadhog");
+    this.disp.add("winston");
+    this.disp.add("zarya");
+    this.disp.add("ana");
+    this.disp.add("lucio");
+    this.disp.add("mercy");
+    this.disp.add("moira");
+    this.disp.add("symmetra");
+    this.disp.add("zenyatta");
+    this.disp.add("pyro");
+    this.disp.add("demoman");
   }
 
   public synchronized boolean pic(Pessoa p, String hero){
@@ -73,7 +102,7 @@ class Escolha implements Runnable
       String current;
       out.println("Qual é o Hero que deseja ?");
       long startTime = System.currentTimeMillis(); //fetch starting time
-      while(((current = in.readLine())!=null) && System.currentTimeMillis()<startTime+10000){
+      while(((current = in.readLine())!=null) && System.currentTimeMillis()<startTime+30000){
           out.println(System.currentTimeMillis()-startTime);
           flag = HeroPic(current);
           if(!flag){
@@ -122,7 +151,7 @@ class MatchMaking implements Runnable
         Thread t = (new Thread(e));
         t.start();
       }
-      while(acabou<1){
+      while(acabou<5){
         synchronized(this){
           wait();
         }
@@ -169,9 +198,14 @@ class Jogo implements Runnable
   public void run(){
     System.out.println("mm starting");
     System.out.println(this.jogadores);
-    this.equipa1.add(this.jogadores.get(0));
+    for(int i = 0; i<5; i++){
+        equipa1.add(jogadores.get(i));
+    }
     System.out.println(this.equipa1);
-    this.equipa2.add(this.jogadores.get(1));
+    for(int i = 5; i<10; i++){
+        equipa2.add(jogadores.get(i));
+    }
+    System.out.println(this.equipa1);
     MatchMaking m1 = new MatchMaking(equipa1, this);
     MatchMaking m2 = new MatchMaking(equipa2, this);
     Thread e1 = new Thread(m1);
@@ -185,23 +219,53 @@ class Jogo implements Runnable
         }
         System.out.println(this.acabou);  
       }
-    if((m1.getEscolhas().size()==1) && (m2.getEscolhas().size()==1)){
+    if((m1.getEscolhas().size()==5) && (m2.getEscolhas().size()==5)){
         System.out.println("começou o jogo");
         TimeUnit.SECONDS.sleep(5);
         System.out.println("acabou o jogo");
-        System.out.println(this.jogadores);
-        for(int i=0; i<this.jogadores.size(); i++){
-          Thread ini = new Thread(new Inicial(s, this.jogadores.get(i)));
-          ini.start();
+        int randomNum = ThreadLocalRandom.current().nextInt(1, 2 + 1);
+        System.out.println(randomNum);
+        if(randomNum==1){
+            for(Pessoa p: equipa1){
+                if(p.getRate()!=9){
+                    p.setRate(p.getRate()+1);
+                }
+            }
+            for(Pessoa p: equipa2){
+                if(p.getRate()!=0){
+                    p.setRate(p.getRate()-1);
+                }
+            }
+        }else{
+                for(Pessoa p: equipa2){
+                    if(p.getRate()!=9){
+                        p.setRate(p.getRate()+1);
+                    }
+                }
+                for(Pessoa p: equipa1){
+                    if(p.getRate()!=0){
+                        p.setRate(p.getRate()-1);
+                    }
+                }
+        }
+        for(int i=0; i<jogadores.size(); i++){
+            jogadores.get(i).getInicial().setStatus();
+            System.out.println(jogadores.get(i).getInicial().getStatus());
+            synchronized(jogadores.get(i).getInicial()){
+                jogadores.get(i).getInicial().notifyAll();
+            }
         }
     }
     else{
       System.out.println("jogo cancelado");
-      for(int i=0; i<this.jogadores.size(); i++){
-        Thread ini = new Thread(new Inicial(s, this.jogadores.get(i)));
-        ini.start();
-      }
+      for(int i=0; i<jogadores.size(); i++){
+        jogadores.get(i).getInicial().setStatus();
+        System.out.println(jogadores.get(i).getInicial().getStatus());
+        synchronized(jogadores.get(i).getInicial()){
+            jogadores.get(i).getInicial().notifyAll();
+        }
     }
+    }   
     } catch (InterruptedException e){
       e.printStackTrace();
     }
@@ -244,38 +308,53 @@ class Server
 
   public void criarJogo(){
     lock.lock();
-    ArrayList<Pessoa> jogadores = new ArrayList<>();
-    for(int i=0; i<9; i++){
-      if(this.procurando.containsKey(i)){
-        System.out.println(this.procurando.get(i).size());
-        if(this.procurando.get(i).size()>=2){
-          for(int j = 0; j<2; j++){
-            Pessoa p = this.procurando.get(i).get(0);
-            this.procurando.get(i).remove(p);
-            jogadores.add(p);
-          }
-          System.out.println("criar jogo");
-          (new Thread(new Jogo(this, jogadores))).run();
-        } else{
-          if(this.procurando.containsKey(i+1)){
-            if((this.procurando.get(i).size() + this.procurando.get(i+1).size())>=2){
-              for (Pessoa a : this.procurando.get(i)) {
-                jogadores.add(a);
-                this.procurando.get(i).remove(a);
+      try {
+          ArrayList<Pessoa> jogadores = new ArrayList<>();
+          for(int i=0; i<9; i++){
+              if(this.procurando.containsKey(i)){
+                  System.out.println(this.procurando.get(i).size());
+                  if(this.procurando.get(i).size()>=10){
+                      for(int j = 0; j<10; j++){
+                          Pessoa p = this.procurando.get(i).get(j);
+                          jogadores.add(p);
+                      }
+                      for(int j = 0; j<10; j++){
+                          Pessoa p = this.procurando.get(i).get(0);
+                          this.procurando.get(i).remove(p);
+                      }
+                      System.out.println(jogadores.size());
+                      System.out.println("criar jogo");
+                      (new Thread(new Jogo(this, jogadores))).start();
+                  } else{
+                      if(this.procurando.containsKey(i+1)){
+                          if((this.procurando.get(i).size() + this.procurando.get(i+1).size())>=10){
+                              for(int j = 0; j<this.procurando.get(i).size(); j++){
+                                Pessoa p = this.procurando.get(i).get(j);
+                                jogadores.add(p);
+                              }
+                              for(int j = 0; j<this.procurando.get(i).size(); j++){
+                                Pessoa p = this.procurando.get(i).get(0);
+                                this.procurando.get(i).remove(p);
+                              }
+                              int s = 10-jogadores.size();
+                              for(int j=0; j<s; j++){
+                                  Pessoa p = this.procurando.get(i+1).get(j);
+                                  jogadores.add(p);
+                              }
+                              for(int j=0; j<s; j++){
+                                  Pessoa p = this.procurando.get(i+1).get(0);
+                                  this.procurando.get(i+1).remove(p);
+                              }
+                              System.out.println(jogadores.size());
+                              System.out.println("criar jogo");
+                              (new Thread(new Jogo(this, jogadores))).start();
+                          }
+                      }
+                  }
               }
-              int s = jogadores.size();
-              for(int j=s; j<=10; j++){
-                Pessoa p = this.procurando.get(i+1).get(0);
-                this.procurando.get(i+1).remove(p);
-                jogadores.add(p);
-              }
-              new Jogo(this, jogadores);
-            }
-          }
-        }
-      } 
-    }
-    lock.unlock();
+          } } finally {
+          lock.unlock();
+      }
   }
 
   public synchronized Map<String, Pessoa> getRegistos(){
@@ -310,7 +389,8 @@ class Server
     }
   }
 
-  public synchronized void addProcura(Pessoa ps){
+  public void addProcura(Pessoa ps){
+    lock.lock();
     try {
       if (this.procurando.containsKey(ps.getRate())){
         this.procurando.get(ps.getRate()).add(ps);
@@ -320,9 +400,13 @@ class Server
         this.procurando.put(ps.getRate(), rates);
       }
       this.np++;
-      notifyAll();
+      synchronized(this){
+        notifyAll();
+      }
+      lock.unlock();
     }catch(Exception e){
         e.printStackTrace();
+        lock.unlock();
     }
   }
 
@@ -352,20 +436,31 @@ class Pessoa
   private String email;
   private int rate;
   private Socket cs;
+  private Inicial i;
 
   public Pessoa(){
     this.username=null;
     this.password=null;
     this.email=null;
     this.rate = 5;
+    this.i=null;
   }
 
-  public Pessoa(String user, String mail, String pass, Socket cs){
+  public Pessoa(String user, String mail, String pass, Socket cs, Inicial i){
     this.username=user;
     this.password=pass;
     this.email=mail;
     this.rate = 5;
     this.cs = cs;
+    this.i=i;
+  }
+
+  public synchronized void setInicial(Inicial i){
+    this.i=i;
+  }
+
+  public synchronized Inicial getInicial(){
+    return this.i;
   }
 
   public synchronized void setSocket(Socket cs){
@@ -422,311 +517,117 @@ class MM implements Runnable
   }
 }
 
-class Menu implements Serializable{
-  // variáveis de instância
-  private List<String> opcoes;
-  private int op;
-  private int choiceMenu;
-  private Socket cs;
-  private PrintWriter out;
-  private BufferedReader in;
-
-  /**
-   * Constructor for objects of class Menu
-   */
-  public Menu(String[] opcoes, Socket cs) {
-    try{
-      this.opcoes = Arrays.asList(opcoes);
-      this.op = 0;
-      this.cs = cs;
-      this.out = new PrintWriter(this.cs.getOutputStream(), true);
-      this.in = new BufferedReader(new InputStreamReader( this.cs.getInputStream()));
-    }catch(Exception e){
-      e.printStackTrace();
-    }
-  }
-
-  /**
-   * Método para apresentar o menu e ler uma opção.
-   *
-   */
-  public synchronized void executaHomeMenu() {
-      this.choiceMenu = 1;
-      do {
-          showMenu();
-          this.op = lerOpcao();
-      } while (this.op == -1);
-  }
-
-  public synchronized void executaClientMenu() {
-      this.choiceMenu = 2;
-      do {
-          showMenu();
-          this.op = lerOpcao();
-      } while (this.op == -1);
-  }
-
-  private synchronized void showMenu() {
-    try{
-    
-    switch(this.choiceMenu){
-      case 1: this.out.println("\n*** Bem-vindo ao OverWatch ***");
-      for (int i=0; i<this.opcoes.size(); i++) {
-          this.out.print((i+1));
-          this.out.print(" - ");
-          this.out.println(this.opcoes.get(i));
-      }
-      this.out.println("0 - Sair");
-      break;
-
-      case 2: this.out.println("\n*** Cliente ***");
-      for (int i=0; i<this.opcoes.size(); i++) {
-          this.out.print((i+1));
-          this.out.print(" - ");
-          this.out.println(this.opcoes.get(i));
-      }
-      this.out.println("0 - Sair");
-      break;
-    }
-    }catch(Exception e){
-      e.printStackTrace();
-    }
-  }
-
-  private synchronized int lerOpcao(){
-    try{
-      int op;
-      out.print("Opção: ");
-      try {
-          String current = this.in.readLine();
-          op = Integer.parseInt(current);
-      }
-      catch (Exception e) { // Não foi inscrito um int
-          op = -1;
-      }
-      if (op<0 || op>this.opcoes.size()) {
-          this.out.println("Opção Inválida!!!");
-          op = -1;
-      }
-      return op;
-    } catch(Exception e){
-      return -1;
-    }
-  }
-
-    /**
-     * Método para obter a última opção lida
-     */
-  public synchronized int getOpcao() {
-    return this.op;
-  }
-}
-
 class Inicial implements Runnable
 {
-  private Socket cs;
-  private Server s;
-  private Pessoa p;
-  private static Menu homeMenu, clientMenu;
-  final Lock lock = new ReentrantLock();
+    private Socket cs;
+    private Server s;
+    private boolean jogar;
+    private Pessoa p;
 
-  Inicial (Socket cs, Server s) 
-  {
-    this.cs = cs; 
-    this.s=s;
-    this.p= new Pessoa();
-  }
-
-  Inicial (Server s, Pessoa pe) 
-  {
-    this.cs = pe.getSocket();
-    this.s=s;
-    this.p= pe;
-  }
-
-  private void loadMenus(Socket cs) {
-		String[] main = {"Iniciar Sessão",
-		"Registar utilizador"};
-
-    String[] client = {"Jogar"};
-    
-    homeMenu = new Menu(main, cs);
-    clientMenu = new Menu(client, cs);
-  }
-  
-  private void runHomeMenu() {
-    try{
-      PrintWriter out = new PrintWriter(this.cs.getOutputStream(), true);
-      loadMenus(this.cs);
-
-      do {
-        homeMenu.executaHomeMenu();
-        switch(homeMenu.getOpcao()) {
-          case 0: try{
-            this.cs.close();
-          } catch (Exception e){
-            out.println("There was a problem during the last request.  Could not close the game");
-          }
-          break;
-
-          case 1: try {
-            login();
-          } catch (Exception e){
-            out.println("There was a problem during the last request.  Could not login");
-          }
-          break;
-
-          case 2: try {
-            signUp();
-          } catch (Exception e){
-            out.println("There was a problem during the last request. Could not sign up");
-          }
-          break;
-        }
-        break;
-      } while(homeMenu.getOpcao() != 0);
-    } catch(Exception e){
-      e.printStackTrace();
+    public Inicial(Socket cs, Server s){
+        this.cs = cs;
+        this.s = s;
+        this.jogar = false;
+        this.p = null;
     }
-  }
 
-  private void runClientMenu() {
-    try{
-      PrintWriter out = new PrintWriter(cs.getOutputStream(), true);
-      BufferedReader in = new BufferedReader(new InputStreamReader( cs.getInputStream()));
+    public synchronized void run(){
+        try{
+        BufferedReader in = new BufferedReader(new InputStreamReader( this.cs.getInputStream()));
+        PrintWriter out = new PrintWriter(cs.getOutputStream(), true);
 
-      loadMenus(this.cs);
-      do {
-        clientMenu.executaClientMenu();
-        switch(clientMenu.getOpcao()) {
-          case 0: try {
-            out.println("Tem a certeza que quer sair?");
-            String current = in.readLine();
-            if(current.equals("Sim")){
-              s.removeAut(this.p);
-              this.cs.close();
-            }else{
-              runClientMenu();
+        boolean flag1 = false;
+        String current = null;
+        while (!flag1){
+            out.println("Quer fazer login ou registar-se ? Escreva Login ou Registar");
+            current = in.readLine();
+            if(current.equals("Registar")){
+                String user, pass;
+                out.println("Escreva o username");
+                user = in.readLine();
+                out.println("Escreva o seu email");
+                String mail = in.readLine();
+                out.println("Escreva a password");
+                pass = in.readLine();
+                int i = s.Registado(user, pass);
+                if(i==1){
+                    out.println("ja esta registado");
+                }
+                if(i==2){
+                    out.println("username a ser usado");
+                }
+                if(i==3){
+                    Pessoa nova = new Pessoa(user, mail, pass, this.cs, this);
+                    this.p= nova;
+                    this.s.addRegisto(nova);
+                    this.s.addAutenticados(nova);
+                    out.println("Registado e autenticado!");
+                    flag1 = true;
+                }
             }
-          } catch (Exception e){
-            out.println("There was a problem during the last request.  Could not close the game");
-          }
-          break;
-
-          case 1: try {
-            out.println("Tem a certeza que quer jogar");
-            String current = in.readLine();
-            if(current.equals("Sim")){
-              procurar(this.p);
-              out.println("procurando...");
-            }else{
-              runClientMenu();
+            if(current.equals("Login")){
+                out.println("Escreva o username");
+                String user = in.readLine();
+                out.println("Escreva a password");
+                String pass = in.readLine();
+                int i = s.Registado(user, pass);
+                if(i==1){
+                    this.p=s.getUser(user);
+                    boolean flag = s.addAutenticados(p);
+                    if(flag){
+                        out.println("autenticado!");
+                        this.p.setSocket(this.cs);
+                        this.p.setInicial(this);
+                        flag1=true;
+                    } else{
+                        out.println("conta a ser usada");
+                        break;
+                    }
+                }
+                if(i==2){
+                    out.println("password errada!");
+                }
+                if(i==3){
+                    out.println("username desconhecido");
+                }
             }
-          } catch (Exception e){
-            out.println("There was a problem during the last request.  Could not login");
-          }
-          break;
         }
-        break;
-      } while(clientMenu.getOpcao() != 0);
-    } catch(Exception e){
-      e.printStackTrace();
-    }
-  }
-
-  private void login(){
-    try{
-      PrintWriter out = new PrintWriter(this.cs.getOutputStream(), true);
-      BufferedReader in = new BufferedReader(new InputStreamReader( this.cs.getInputStream()));
-
-      out.println("Escreva o username");
-      String user = in.readLine();
-      out.println("Escreva a password");
-      String pass = in.readLine();
-      int i = s.Registado(user, pass);
-      if(i==1){
-          this.p=s.getUser(user);
-          boolean flag = s.addAutenticados(p);
-          if(flag){
-            out.println("autenticado!");
-            this.p.setSocket(this.cs);
-            runClientMenu();
-          } else{
-            out.println("conta a ser usada");
-            cs.close();
-          }
-      }
-      if(i==2){
-        out.println("password errad!");
-        runHomeMenu();
-      }
-      if(i==3){
-        out.println("username desconhecido");
-        runHomeMenu();
-      }
-    } catch(Exception e){
-      e.printStackTrace();
-    }
-  }
-
-  private void signUp(){
-    try{
-      PrintWriter out = new PrintWriter(cs.getOutputStream(), true);
-      BufferedReader in = new BufferedReader(new InputStreamReader( cs.getInputStream()));
-
-      String user, pass;
-      out.println("Escreva o username");
-      user = in.readLine();
-      out.println("Escreva o seu email");
-      String mail = in.readLine();
-      out.println("Escreva a password");
-      pass = in.readLine();
-      int i = s.Registado(user, pass);
-      if(i==1){
-        out.println("ja esta registado");
-        runHomeMenu();
-      }
-      if(i==2){
-        out.println("username a ser usado");
-        runHomeMenu();
-      }
-      if(i==3){
-        Pessoa nova = new Pessoa(user, mail, pass, this.cs);
-        this.p= nova;
-        this.s.addRegisto(nova);
-        this.s.addAutenticados(nova);
-        out.println("Registado e autenticado!");
-        runClientMenu();
-      }
-    } catch(Exception e){
-      e.printStackTrace();
-    }
-  }
-
-  public synchronized void run() 
-  {
-    try 
-    {
-      if(this.p.getUsername()==null) {
-        try {
-          runHomeMenu();
-        } catch (NullPointerException e){
-          System.out.println("Problema ao carregar Menu inicial");
+        if(flag1){
+            while(current!=null){
+                out.println("Quer jogar ou sair? Escreva jogar ou sair");
+                current=in.readLine();
+                if(current.equals("jogar")){
+                    out.println("procurando...");
+                    this.jogar=true;
+                    this.p.setInicial(this);
+                    this.s.addProcura(this.p);
+                    while(this.jogar!=false){
+                        wait();
+                    }
+                }
+                if(current.equals("sair")){
+                    this.s.removeAut(this.p);
+                    break;
+                }
+            }
         }
-      }
-      else{
-        runClientMenu();
-      }
-    } catch (Exception e) { e.printStackTrace(); }
-  }
+        this.cs.close();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
 
-  public void procurar(Pessoa ps){
-    s.addProcura(ps);
-  }
+    public boolean getStatus(){
+        return this.jogar;
+    }
+
+    public void setStatus(){
+        this.jogar=false;
+    }
 }
 
 
-public class ChatServ
+public class Serv
 {
     public static void main(String[] args) throws IOException {
 
