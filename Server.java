@@ -57,6 +57,8 @@ public class Server
                     Pessoa p = this.procurando.get(i-1).get(0);
                     this.procurando.get(i-1).remove(p);
                   }
+                  int e1 = 0;
+                  e1 = jogadores.size();
                   int s = 10-jogadores.size();
                   for(int j=0; j<s; j++){
                       Pessoa p = this.procurando.get(i).get(j);
@@ -67,7 +69,7 @@ public class Server
                       this.procurando.get(i).remove(p);
                   }
                   System.out.println("criar jogo");
-                  (new Thread(new Jogo(this, jogadores))).start();
+                  (new Thread(new Jogo(this, jogadores, e1, s))).start();
               }
           } else{
               if(this.procurando.containsKey(i)){
@@ -80,8 +82,10 @@ public class Server
                           Pessoa p = this.procurando.get(i).get(0);
                           this.procurando.get(i).remove(p);
                       }
+                      int e1 = 10;
+                      int s = 0;
                       System.out.println("criar jogo");
-                      (new Thread(new Jogo(this, jogadores))).start();
+                      (new Thread(new Jogo(this, jogadores, e1, s))).start();
                   } else{
                       if(this.procurando.containsKey(i+1)){
                           if((this.procurando.get(i).size() + this.procurando.get(i+1).size())>=10){
@@ -93,6 +97,8 @@ public class Server
                                 Pessoa p = this.procurando.get(i).get(0);
                                 this.procurando.get(i).remove(p);
                               }
+                              int e1 = 0;
+                              e1 = jogadores.size();
                               int s = 10-jogadores.size();
                               for(int j=0; j<s; j++){
                                   Pessoa p = this.procurando.get(i+1).get(j);
@@ -103,7 +109,7 @@ public class Server
                                   this.procurando.get(i+1).remove(p);
                               }
                               System.out.println("criar jogo");
-                              (new Thread(new Jogo(this, jogadores))).start();
+                              (new Thread(new Jogo(this, jogadores, e1, s))).start();
                           }
                       }
                   }

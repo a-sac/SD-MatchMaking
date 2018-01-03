@@ -12,15 +12,19 @@ public class Jogo implements Runnable
   private ArrayList<Pessoa> equipa1;
   private ArrayList<Pessoa> equipa2;
   private Server s;
+  private int jog1;
+  private int jog2;
   private int acabou;
 
-  public Jogo(Server s, ArrayList<Pessoa> jogadores){
+  public Jogo(Server s, ArrayList<Pessoa> jogadores, int jog1, int jog2){
     this.jogadores = new ArrayList<Pessoa>();
     this.equipa1 = new ArrayList<Pessoa>();
     this.equipa2 = new ArrayList<Pessoa>();
     this.s = s;
     this.jogadores=jogadores;
     this.acabou=0;
+    this.jog1=jog1;
+    this.jog2=jog2;
     System.out.println("formar equipas");
   }
 
@@ -30,11 +34,20 @@ public class Jogo implements Runnable
 
   public void run(){
     System.out.println("mm starting");
-    for(int i = 0; i<5; i++){
+    int n,m;
+    n = jog1/2;
+    m= jog2/2;
+    for(int i = 0; i<n; i++){
+        equipa1.add(jogadores.get(i));
+    }
+    for(int i = jog1; i<jog1+m; i++){
         equipa1.add(jogadores.get(i));
     }
     System.out.println(this.equipa1);
-    for(int i = 5; i<10; i++){
+    for(int i = n; i<jog1; i++){
+        equipa2.add(jogadores.get(i));
+    }
+    for(int i = jog1+m; i<10; i++){
         equipa2.add(jogadores.get(i));
     }
     MatchMaking m1 = new MatchMaking(equipa1, this);
