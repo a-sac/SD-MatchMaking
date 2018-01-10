@@ -12,8 +12,6 @@ public class Server
   private Map<Integer, ArrayList<Pessoa>> procurando;
   private Map<String,Pessoa> registos;
   private Map<String,Pessoa> autenticados;
-  private int np;
-  private int rate;
   final Lock lock = new ReentrantLock();
 
   public Server(){
@@ -21,44 +19,20 @@ public class Server
     this.procurando = new HashMap<Integer, ArrayList<Pessoa>>();
     this.registos = new HashMap<String,Pessoa>();
     this.autenticados = new HashMap<String,Pessoa>();
-    this.np=0;
-    this.rate = 0;
   }
 
-  public void Procura(){
-    int i = 0;
-    while(true){
-      try{
-        while (i==this.np){
-          synchronized(this){
-            wait();
-          }
-        }
-        criarJogo();
-        i++;
-      } catch(Exception e){
-        e.printStackTrace();
-      }
-    }
-  }
-
-  public void criarJogo(){
-    lock.lock();
-      try {
+  public void criarJogo(int i){
           ArrayList<Pessoa> jogadores = new ArrayList<>();
-          int i = this.rate;
-          if((this.procurando.containsKey(i-1)) && (this.procurando.containsKey(i))){
-              if((this.procurando.get(i-1).size() + this.procurando.get(i).size())>=10){
-                  for(int j = 0; j<this.procurando.get(i-1).size(); j++){
+          if((this.procurando.containsKey(i-1)) && (this.procurando.containsKey(i)) && ((this.procurando.get(i-1).size() + this.procurando.get(i).size())>=10)){
+                  for(int j = 0; j<this.procurando.get(i-1).size() && j<10; j++){
                     Pessoa p = this.procurando.get(i-1).get(j);
                     jogadores.add(p);
                   }
-                  for(int j = 0; j<this.procurando.get(i-1).size(); j++){
+                  for(int j = 0; j<this.procurando.get(i-1).size() && j<10; j++){
                     Pessoa p = this.procurando.get(i-1).get(0);
                     this.procurando.get(i-1).remove(p);
                   }
-                  int e1 = 0;
-                  e1 = jogadores.size();
+                  int jog1 = jogadores.size();
                   int s = 10-jogadores.size();
                   for(int j=0; j<s; j++){
                       Pessoa p = this.procurando.get(i).get(j);
@@ -69,11 +43,10 @@ public class Server
                       this.procurando.get(i).remove(p);
                   }
                   System.out.println("criar jogo");
-                  (new Thread(new Jogo(this, jogadores, e1, s))).start();
-              }
-          } else{
-              if(this.procurando.containsKey(i)){
-                  if(this.procurando.get(i).size()>=10){
+                  (new Thread(new Jogo(this, jogadores, jog1, s))).start();
+          } 
+          else{
+              if(this.procurando.containsKey(i) && this.procurando.get(i).size()>=10){
                       for(int j = 0; j<10; j++){
                           Pessoa p = this.procurando.get(i).get(j);
                           jogadores.add(p);
@@ -82,23 +55,20 @@ public class Server
                           Pessoa p = this.procurando.get(i).get(0);
                           this.procurando.get(i).remove(p);
                       }
-                      int e1 = 10;
-                      int s = 0;
                       System.out.println("criar jogo");
-                      (new Thread(new Jogo(this, jogadores, e1, s))).start();
-                  } else{
-                      if(this.procurando.containsKey(i+1)){
-                          if((this.procurando.get(i).size() + this.procurando.get(i+1).size())>=10){
-                              for(int j = 0; j<this.procurando.get(i).size(); j++){
+                      (new Thread(new Jogo(this, jogadores, 10, 0))).start();
+                  } 
+                  else{
+                      if(this.procurando.containsKey(i) && this.procurando.containsKey(i+1) && (this.procurando.get(i).size() + this.procurando.get(i+1).size())>=10){
+                              for(int j = 0; j<this.procurando.get(i).size() && j<10; j++){
                                 Pessoa p = this.procurando.get(i).get(j);
                                 jogadores.add(p);
                               }
-                              for(int j = 0; j<this.procurando.get(i).size(); j++){
+                              for(int j = 0; j<this.procurando.get(i).size() && j<10; j++){
                                 Pessoa p = this.procurando.get(i).get(0);
                                 this.procurando.get(i).remove(p);
                               }
-                              int e1 = 0;
-                              e1 = jogadores.size();
+                              int jog1 = jogadores.size();
                               int s = 10-jogadores.size();
                               for(int j=0; j<s; j++){
                                   Pessoa p = this.procurando.get(i+1).get(j);
@@ -109,15 +79,10 @@ public class Server
                                   this.procurando.get(i+1).remove(p);
                               }
                               System.out.println("criar jogo");
-                              (new Thread(new Jogo(this, jogadores, e1, s))).start();
+                              (new Thread(new Jogo(this, jogadores, jog1, s))).start();
                           }
                       }
-                  }
               }
-            }
-          } finally {
-          lock.unlock();
-      }
   }
 
   public synchronized Map<String, Pessoa> getRegistos(){
@@ -155,7 +120,6 @@ public class Server
   public void addProcura(Pessoa ps){
     lock.lock();
     try {
-      System.out.print(ps.getRate());
       if (this.procurando.containsKey(ps.getRate())){
         this.procurando.get(ps.getRate()).add(ps);
       } else {
@@ -163,11 +127,7 @@ public class Server
         rates.add(ps);
         this.procurando.put(ps.getRate(), rates);
       }
-      this.np++;
-      this.rate=ps.getRate();
-      synchronized(this){
-        notifyAll();
-      }
+      criarJogo(ps.getRate());
       lock.unlock();
     }catch(Exception e){
         e.printStackTrace();

@@ -14,15 +14,14 @@ public class Overwatch
         Socket cs;
         Server s = new Server();
 
-        Thread mm = new Thread(new MM(s));
-        mm.start();
-
         try {
           while (true)
           {
               cs = ss.accept();
-                                      
-              Thread ini = new Thread( new Inicial(cs,s) );
+              Outcome c = new Outcome(cs);
+              Thread out = new Thread(c);
+              out.start();
+              Thread ini = new Thread( new Inicial(cs,s,c,out) );
               ini.start();
           }
         } catch(Exception e){

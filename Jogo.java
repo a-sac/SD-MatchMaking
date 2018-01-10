@@ -33,7 +33,6 @@ public class Jogo implements Runnable
   }
 
   public void run(){
-    System.out.println("mm starting");
     int n,m;
     n = jog1/2;
     m= jog2/2;
@@ -43,13 +42,13 @@ public class Jogo implements Runnable
     for(int i = jog1; i<jog1+m; i++){
         equipa1.add(jogadores.get(i));
     }
-    System.out.println(this.equipa1);
     for(int i = n; i<jog1; i++){
         equipa2.add(jogadores.get(i));
     }
     for(int i = jog1+m; i<10; i++){
         equipa2.add(jogadores.get(i));
     }
+    System.out.println("mm starting");
     MatchMaking m1 = new MatchMaking(equipa1, this);
     MatchMaking m2 = new MatchMaking(equipa2, this);
     Thread e1 = new Thread(m1);
@@ -60,8 +59,7 @@ public class Jogo implements Runnable
       while(this.acabou<2){
         synchronized(this){
           wait();
-        }
-        System.out.println(this.acabou);  
+        } 
       }
     if((m1.getEscolhas().size()==5) && (m2.getEscolhas().size()==5)){
         for(Pessoa a: jogadores){
@@ -71,7 +69,6 @@ public class Jogo implements Runnable
         TimeUnit.SECONDS.sleep(5);
         System.out.println("acabou o jogo");
         int randomNum = ThreadLocalRandom.current().nextInt(1, 2 + 1);
-        System.out.println(randomNum);
         if(randomNum==1){
             for(Pessoa p: equipa1){
                 if(p.getRate()!=9){
@@ -97,7 +94,6 @@ public class Jogo implements Runnable
         }
         for(int i=0; i<jogadores.size(); i++){
             jogadores.get(i).getInicial().setStatus();
-            System.out.println(jogadores.get(i).getInicial().getStatus());
             synchronized(jogadores.get(i).getInicial()){
                 jogadores.get(i).getInicial().notifyAll();
             }
