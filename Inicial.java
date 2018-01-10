@@ -12,12 +12,34 @@ public class Inicial implements Runnable
     private Server s;
     private boolean jogar;
     private Pessoa p;
+    private Heros h;
+    private ChatLog chat;
+    private boolean ready;
+    private Outcome out;
+    private Thread t;
 
-    public Inicial(Socket cs, Server s){
+    public Inicial(Socket cs, Server s, Outcome out, Thread t){
         this.cs = cs;
         this.s = s;
         this.jogar = false;
+        this.ready = false;
         this.p = null;
+        this.h = null;
+        this.chat = null;
+        this.t = t;
+        this.out = out;
+    }
+
+    public Outcome getOut(){
+      return this.out;
+    }
+
+    public void setHeros(Heros h){
+      this.h = h;
+    }
+
+    public void setReady(){
+      this.ready=true;
     }
 
     public void jogoRealizado(ArrayList<Pessoa> e1, ArrayList<Pessoa> e2, HashMap<Pessoa,String> m1, HashMap<Pessoa,String> m2){
@@ -36,6 +58,10 @@ public class Inicial implements Runnable
       }
     }
 
+    public void setChat(ChatLog l){
+      this.chat = l;
+    }
+
     public void jogoNRealizado(){
       try{
         BufferedReader in = new BufferedReader(new InputStreamReader( this.cs.getInputStream()));
@@ -47,7 +73,7 @@ public class Inicial implements Runnable
       }
     }
 
-    public synchronized void run(){
+    public void run(){
         try{
         BufferedReader in = new BufferedReader(new InputStreamReader( this.cs.getInputStream()));
         PrintWriter out = new PrintWriter(cs.getOutputStream(), true);
@@ -115,11 +141,22 @@ public class Inicial implements Runnable
                 if(current.equals("jogar")){
                     out.println("procurando...");
                     this.jogar=true;
+                    this.ready=false;
                     this.p.setInicial(this);
                     this.s.addProcura(this.p);
-                    while(this.jogar!=false){
+                    while(!this.ready){
+                      synchronized(this){
                         wait();
+                      }
                     }
+                    Escolha e = new Escolha(this.p, this.h, this.chat);
+                    e.run();
+                    while(this.jogar!=false){
+                      synchronized(this){
+                        wait();
+                      }
+                    }
+                    e=null;
                 }
                 if(current.equals("sair")){
                     this.s.removeAut(this.p);
@@ -127,7 +164,13 @@ public class Inicial implements Runnable
                 }
             }
         }
+        this.out.setCancel();
+        synchronized(this.out){
+          this.out.notify();
+        }
+        this.t.interrupt();
         this.cs.close();
+        Thread.currentThread().interrupt();
         }catch(Exception e){
             e.printStackTrace();
         }
@@ -141,4 +184,3 @@ public class Inicial implements Runnable
         this.jogar=false;
     }
 }
-

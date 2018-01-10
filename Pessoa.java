@@ -65,19 +65,19 @@ public class Pessoa
     return this.password;
   }
 
-  public void setRate(int r){
+  public synchronized void setRate(int r){
     this.rate=r;
   }
 
-  public void setUsername(String us){
+  public synchronized void setUsername(String us){
     this.username=us;
   }
 
-  public void setPassword(String pass){
+  public synchronized void setPassword(String pass){
     this.password=pass;
   }
 
-  public void setMail(String mail){
+  public synchronized void setMail(String mail){
     this.email=mail;
   }
 }

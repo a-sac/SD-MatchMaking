@@ -8,22 +8,49 @@ import java.util.concurrent.locks.AbstractQueuedLongSynchronizer.ConditionObject
 
 public class Outcome implements Runnable
 {
-  Socket cs;
-  ChatLog l;
+  private Socket cs;
+  private ChatLog l;
+  private boolean cancel;
     
-  Outcome (Socket cs, ChatLog l) 
+  Outcome (Socket cs) 
   {
-    this.cs = cs; this.l=l;
+    this.cs = cs; 
+    this.l=null;
+    this.cancel =false;
   }
-    
+
+  public void setChat(ChatLog l){
+    this.l=l;
+  }
+  
+  public void setCancel(){
+    this.cancel=true;
+  }
+
+  public void notifyChat(){
+    synchronized(l){
+     l.notifyAll();
+    }
+    this.l=null;
+  }
+
   public void run() 
   {
     try 
     {
       PrintWriter out = new PrintWriter( cs.getOutputStream(), true );
+	    
+      while(true){
+        synchronized(this){
+          while(l==null) {
+            if(cancel) break;
+            wait();
+          }
+        }
+        if(cancel) break;
+        l.writeloop(out);
+      }
 	        
-      l.writeloop(out);
-	        
-    } catch ( IOException e) { e.printStackTrace(); }
+    } catch (Exception e) { e.printStackTrace(); }
   }
 }

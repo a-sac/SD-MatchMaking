@@ -29,11 +29,7 @@ public class Escolha implements Runnable
     }
   }
 
-  public void close(){
-    out.println("\n**acabou o matchmaking!!\nPor favor clique APENAS 1 VEZ no ENTER antes de escrever qualquer coisa!**\n");
-  }
-
-  public void run(){
+  public synchronized void run(){
     try{
       boolean flag = false;
       String current;
@@ -48,7 +44,6 @@ public class Escolha implements Runnable
             out.println("Hero escolhido com sucesso");
           }
       }
-      Thread.currentThread().interrupt();
     } catch(Exception e){
       e.printStackTrace();
     }

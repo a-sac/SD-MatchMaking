@@ -23,18 +23,19 @@ public class ChatLog
     int i=0; 
     String s;
     try 
-    { 
-      while (true) 
-      {
-        synchronized (this) 
+    {
+      long startTime = System.currentTimeMillis();
+      while(System.currentTimeMillis()<(startTime+30000)){
+        synchronized (this)
         { 
-          while (i >= log.size()) wait(); 
+          while (i >= log.size() && (System.currentTimeMillis()<startTime+30000)) wait();
+          if(!(System.currentTimeMillis()<startTime+30000)) break;
           s=log.elementAt(i);
         }
 
         pw.println(s); 
         i++; 
-      }	
+      }
     } catch (InterruptedException e) {} 
 //    System.out.println("Write Loop Ended");
   } 
