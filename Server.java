@@ -8,14 +8,12 @@ import java.util.concurrent.locks.AbstractQueuedLongSynchronizer.ConditionObject
 
 public class Server
 {
-  private List<Pessoa> pessoas;
   private Map<Integer, ArrayList<Pessoa>> procurando;
   private Map<String,Pessoa> registos;
   private Map<String,Pessoa> autenticados;
   final Lock lock = new ReentrantLock();
 
   public Server(){
-    this.pessoas = new ArrayList<Pessoa>();
     this.procurando = new HashMap<Integer, ArrayList<Pessoa>>();
     this.registos = new HashMap<String,Pessoa>();
     this.autenticados = new HashMap<String,Pessoa>();
@@ -117,8 +115,7 @@ public class Server
     }
   }
 
-  public void addProcura(Pessoa ps){
-    lock.lock();
+  public synchronized void addProcura(Pessoa ps){
     try {
       if (this.procurando.containsKey(ps.getRate())){
         this.procurando.get(ps.getRate()).add(ps);
@@ -128,10 +125,8 @@ public class Server
         this.procurando.put(ps.getRate(), rates);
       }
       criarJogo(ps.getRate());
-      lock.unlock();
     }catch(Exception e){
         e.printStackTrace();
-        lock.unlock();
     }
   }
 
